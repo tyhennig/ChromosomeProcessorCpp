@@ -7,6 +7,8 @@ int getWord(char c);
 bool isValidDNA(char c);
 char* deHash(int n);
 
+char dnaChars[]{ 'A', 'a', 'C', 'c', 'G', 'g', 'T', 't' };
+
 std::vector<int>* wordArray[1048575];
 std::ifstream inf;
 
@@ -41,14 +43,10 @@ int main(int argc, char* argv[])
             {
             case 0:
                 break;
-            case 1:
-                inf.seekg(static_cast<long>(currentIndex) + 1, inf.beg); //fseek(fp, currentIndex + 1, SEEK_SET);
-                break;
-            case 2:
-                inf.seekg(-9, inf.cur);//fseek(fp, -9, SEEK_CUR);
-                break;
+            default:
+                inf.seekg(currentIndex);
             }
-            currentIndex = inf.tellg();
+            //currentIndex = inf.tellg();
         }
         
         
@@ -94,7 +92,7 @@ int getWord(char c)
         }
         else if (!isspace(tempWord[i]))
         {
-            //printf("NOT A WORD: %s\n", tempWord);
+            
             return 1;
         }
 
@@ -150,10 +148,16 @@ long hashWord(char s[])
 
 bool isValidDNA(char c)
 {
-    if (c == 'A' || c == 'a' || c == 'C' || c == 'c'
+    /*if (c == 'A' || c == 'a' || c == 'C' || c == 'c'
         || c == 'G' || c == 'g' || c == 'T' || c == 't') 
     {
         return true;
+    }*/
+
+    for (char dna : dnaChars)
+    {
+        if (dna == c)
+            return true;
     }
     return false;
 }
