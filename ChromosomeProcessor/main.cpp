@@ -1,10 +1,11 @@
 #include <iostream>
-#include <fstream>
-#include <filesystem>
+#include <fstream> //for std::ifstream
+#include <filesystem> 
+#include <ctype.h> //for isspace()
 
 long hashWord(char s[]);
-int getWord(char c);
-bool isValidDNA(char c);
+int getWord(char c, bool validPrev); //returns -1 if EOF, 0 if complete word, and n if invalid character at the nth consecutive char
+bool isValidDNA(char c); 
 char* deHash(int n);
 
 char dnaChars[]{ 'A', 'a', 'C', 'c', 'G', 'g', 'T', 't' };
@@ -32,26 +33,38 @@ int main(int argc, char* argv[])
 
     char currentChar{ '0' };//initialize currentChar to non-null value
     int currentIndex{}; //keep track of location in file
+    bool validPrev{ false };
 
-    while (inf.get(currentChar)) 
+    while (inf.get(currentChar)) //get each character in file
     {
         
-        if (isValidDNA(currentChar)) 
+        if (isValidDNA(currentChar))
         {
             currentIndex = inf.tellg();
-            switch (getWord(currentChar))
+            int result{ getWord(currentChar, validPrev) };
+            switch (result)
             {
-            case 0:
+            case -1: //EOF found
                 break;
-            default:
-                inf.seekg(currentIndex);
+            case 0: //word is valid, so we set validPrev to true and don't move the "cursor"
+                validPrev = true;
+                break;
+            default: //word was invalid, skip to after the invalid char
+                inf.seekg(currentIndex + result);
+                validPrev = false;
             }
             //currentIndex = inf.tellg();
         }
+        else if (!isspace(currentChar)) //if we find an invalid char, set the word to invalid
+        {
+            validPrev = false;
+        }
+        
         
         
     }
 
+    //print out every found word and occurences
     for (int i = 0; i < 1048575; i++)
     {
         int max = 0;
@@ -70,33 +83,45 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-int getWord(char c)
+int getWord(char c, bool validPrev) //returns -1 if EOF, 0 if complete word, and n if invalid character at the nth consecutive char
 {
-    char tempWord[10];
+    static char tempWord[10];
     long hashNum = 0;
     int fileIndex = inf.tellg(); 
-    tempWord[0] = c;
-
-    for (int i = 1; i < 10;)
+    
+    if (validPrev)
     {
+        for (int i{}; tempWord[i+1]; ++i)   //shift letters of array left and assign last index to new char
+        {
+            tempWord[i] = tempWord[i + 1];
+        }
+        tempWord[9] = c;
+    }
+    else
+    {
+        tempWord[0] = c;
+        for (int i = 1; i < 10;)
+        {
         
-        if (!inf.get(tempWord[i]))
-        {
-            std::cout << "REACHED END OF FILE!!!\n";
-            inf.close();
-            return 0;
-        }
-        else if (isValidDNA(tempWord[i]))
-        {
-            ++i;
-        }
-        else if (!isspace(tempWord[i]))
-        {
-            
-            return 1;
+            if (!inf.get(tempWord[i]))
+            {
+                std::cout << "REACHED END OF FILE!!!\n";
+                inf.close();
+                return 0;
+            }
+            else if (isValidDNA(tempWord[i]))
+            {
+                ++i;
+            }
+            else if (!isspace(tempWord[i]))
+            {  
+                return i;
+            }
+
         }
 
     }
+    
 
     hashNum = hashWord(tempWord);
 
@@ -113,7 +138,7 @@ int getWord(char c)
         wordArray[hashNum]->push_back(fileIndex);
     }
 
-    return 2;
+    return 0;
 }
 
 long hashWord(char s[])
@@ -121,7 +146,6 @@ long hashWord(char s[])
     long hashNumber = 0;
     for (int i = 0; i < 10; i++)
     {
-        //printf("Letter: %c\n",s[i]);
         switch (s[i])
         {
         case 'A':
@@ -148,12 +172,6 @@ long hashWord(char s[])
 
 bool isValidDNA(char c)
 {
-    /*if (c == 'A' || c == 'a' || c == 'C' || c == 'c'
-        || c == 'G' || c == 'g' || c == 'T' || c == 't') 
-    {
-        return true;
-    }*/
-
     for (char dna : dnaChars)
     {
         if (dna == c)
